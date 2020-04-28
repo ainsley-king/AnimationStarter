@@ -1,0 +1,17 @@
+body {
+    background-color: lightyellow;
+}
+
+circle {
+    fill: indianred;
+    stroke:black;
+}
+
+button {
+    background-color: indianred;
+    color:lightyellow;
+}
+
+button:hover {
+    background-color: black;
+}

@@ -1,3 +1,5 @@
+var dur = 1000
+
 var getMeanGrade = function(entries)
 {
     return d3.mean(entries,function(entry)
@@ -7,52 +9,36 @@ var getMeanGrade = function(entries)
 }
 
 
-var drawScatter = function(students,target,
-              xScale,yScale,xProp,yProp)
-{
-
-    setBanner(xProp.toUpperCase() +" vs "+ yProp.toUpperCase());
-    
-    d3.select(target).select(".graph")
-    .selectAll("circle")
-    .data(students)
-    .enter()
-    .append("circle")
-    .attr("cx",function(student)
-    {
-        return xScale(getMeanGrade(student[xProp]));    
-    })
-    .attr("cy",function(student)
-    {
-        return yScale(getMeanGrade(student[yProp]));    
-    })
-    .attr("r",4);
-}
-
-var clearScatter = function(target)
-{
-    d3.select(target)
-        .select(".graph")
-        .selectAll("circle")
-        .remove();
-}
-
-
-var createAxes = function(screen,margins,graph,
-                           target,xScale,yScale)
-{
-    var xAxis = d3.axisBottom(xScale);
-    var yAxis = d3.axisLeft(yScale);
-    
+var initAxes = function(lengths,target,xScale,yScale)
+{    
     var axes = d3.select(target)
         .append("g")
+        .classed("class","axis")
+    
     axes.append("g")
-        .attr("transform","translate("+margins.left+","
-             +(margins.top+graph.height)+")")
+        .attr("id","xAxis")
+        .attr("transform","translate("+lengths.margins.left+","
+             +(lengths.margins.top+lengths.graph.height)+")")
+    
+    axes.append("g")
+        .attr("id","yAxis")
+        .attr("transform","translate("+lengths.margins.left+","
+             +(lengths.margins.top)+")")
+}
+
+var updateAxes = function(target,xScale,yScale)
+{
+   var xAxis = d3.axisBottom(xScale);
+    var yAxis = d3.axisLeft(yScale); 
+    
+    d3.select("#xAxis")
+        .transition()
+        .duration(dur)
         .call(xAxis)
-    axes.append("g")
-        .attr("transform","translate("+margins.left+","
-             +(margins.top)+")")
+    
+    d3.select("#yAxis")
+        .transition()
+        .duration(dur)
         .call(yAxis)
 }
 
@@ -72,6 +58,11 @@ var initGraph = function(target,students)
         height:screen.height-margins.top-margins.bottom,
     }
     
+    var lengths = {
+        screen:screen,
+        margins:margins,
+        graph:graph
+    }
 
     //set the screen size
     d3.select(target)
@@ -98,14 +89,58 @@ var initGraph = function(target,students)
   
     
     
-    createAxes(screen,margins,graph,target,xScale,yScale);
+    initAxes(lengths,target,xScale,yScale);
     
     initButtons(students,target,xScale,yScale);
     
-    setBanner("Click buttons to graphs");
+    setBanner("Click buttons to display graphs.");
     
     
 
+}
+
+
+
+var updateGraph = function(students,target,lengths,xScale,yScale,xProp,yProp)
+{
+    
+    console.log("Updating graph.");
+    
+    updateAxes(target,xScale,yScale);
+    
+    setBanner(xProp.toUpperCase() +" vs "+ yProp.toUpperCase());
+    
+    //Join
+    var circ = d3.select(target)
+        .select(".graph")
+        .selectAll("circle")
+        .data(students, function(entry){return entry.grade;})
+    
+    //Enter
+    circ.enter()
+        .append("circle");
+    
+    //Exit
+    circ.exit()
+        .remove();
+    
+    //Update
+    
+    //reselect
+    d3.select(target)
+        .select(".graph")
+        .selectAll("circle")
+        .transition()
+        .duration(dur)
+        .attr("cx",function(student)
+              {
+            return xScale(getMeanGrade(student[xProp]));    
+        })
+        .attr("cy",function(student)
+              {
+            return yScale(getMeanGrade(student[yProp]));    
+        })
+        .attr("r",4);
 }
 
 var initButtons = function(students,target,xScale,yScale)
@@ -114,36 +149,38 @@ var initButtons = function(students,target,xScale,yScale)
     d3.select("#fvh")
     .on("click",function()
     {
-        clearScatter(target);
-        drawScatter(students,target,
-              xScale,yScale,"final","homework");
+        var yScale = d3.scaleLinear()
+        .domain([0,50])
+        .range([345,0]);
+        
+        updateGraph(students,target,length,xScale,yScale,"final","homework");
     })
     
     d3.select("#hvq")
     .on("click",function()
     {
-        clearScatter(target);
-        drawScatter(students,target,
-              xScale,yScale,"homework","test");
+        var xScale = d3.scaleLinear()
+        .domain([50,0])
+        .range([400,0]);
+        
+        updateGraph(students,target,length,xScale,yScale,"homework","test");
     })
     
     d3.select("#tvf")
     .on("click",function()
     {
-        clearScatter(target);
-        drawScatter(students,target,
-              xScale,yScale,"test","final");
+        updateGraph(students,target,length,xScale,yScale,"test","final");
     })
     
     d3.select("#tvq")
     .on("click",function()
     {
-        clearScatter(target);
-        drawScatter(students,target,
-              xScale,yScale,"test","quizes");
+        var yScale = d3.scaleLinear()
+        .domain([0,10])
+        .range([345,0]);
+        
+        updateGraph(students,target,length,xScale,yScale,"test","quizes");
     })
-    
-    
     
 }
 
@@ -153,6 +190,7 @@ var setBanner = function(msg)
         .text(msg);
     
 }
+
 
 
 

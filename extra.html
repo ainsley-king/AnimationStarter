@@ -1,0 +1,98 @@
+var drawScatter = function(students,target,
+              xScale,yScale,xProp,yProp)
+{
+
+    setBanner(xProp.toUpperCase() +" vs "+ yProp.toUpperCase());
+    
+    d3.select(target).select(".graph")
+    .selectAll("circle")
+    .data(students)
+    .enter()
+    .append("circle")
+    .attr("cx",function(student)
+    {
+        return xScale(getMeanGrade(student[xProp]));    
+    })
+    .attr("cy",function(student)
+    {
+        return yScale(getMeanGrade(student[yProp]));    
+    })
+    .attr("r",4);
+}
+
+
+
+
+
+
+
+
+recalculateScales = function(students,lengths)
+{
+    var xScale = d3.scaleBand()
+        .domain(students.map(function(entry)
+                              {return entry.grade; }))
+        .range([0,lengths.graph.width])
+        .paddingInner(.5)
+    
+    var yScale = d3.scaleLinear()
+        .domain([0,
+                d3.max(students,function(entry)
+                       { return entry.amt; })
+                ])
+        .range([lengths.graph.height,0])
+    
+    return { xScale:xScale,yScale:yScale}
+}
+
+
+
+var createLabels = function(target,xScale,yScale,xProp,yProp)
+{
+    //the size of the screen
+    var screen = {width:500, height:400};
+    
+    //how much space will be on each side of the graph
+    var margins = {top:15,bottom:40,left:70,right:15};
+    
+    //generated how much space the graph will take up
+    var graph = 
+    {
+        width:screen.width-margins.left-margins.right,
+        height:screen.height-margins.top-margins.bottom,
+    }
+    
+    var lengths = {
+        screen:screen,
+        margins:margins,
+        graph:graph
+    }
+    
+    var clearLables = d3.select(".labels")
+        .remove()
+    
+    var labels = d3.select(target)
+        .append("g")
+        .classed("labels",true)
+        
+    labels.append("text")
+        .attr("id","xLabel")
+        .attr("transform","translate(20,"+screen.height-(margins.bottom/2)+")")
+        .append("text")
+        .text(xProp + " grades")
+        .classed("label",true)
+        .attr("text-anchor","middle")
+        
+    
+    
+    labels.append("g")
+        .attr("id","yLabel")
+        .attr("transform","translate(20,"+ 
+              (lengths.margins.top+(lengths.graph.height/2))+")")
+        .append("text")
+        .text(yProp + " grades")
+        .classed("label",true)
+        .attr("text-anchor","middle")
+        .attr("transform","rotate(90)")
+    
+}
